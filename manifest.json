@@ -1,0 +1,20 @@
+[
+    {
+        "guid": "b8c5d3e7-4f6a-8b9c-1d2e-3f4a5b6c7d8e",
+        "name": "User Ratings",
+        "description": "Permite a los usuarios valorar y reseñar contenido, con funcionalidad de importar/exportar.",
+        "overview": "Un plugin de Jellyfin que habilita valoraciones de usuarios, reseñas y registro histórico.",
+        "owner": "luiscorbachoflores",
+        "category": "Metadata",
+        "versions": [
+            {
+                "version": "2.1.0.0",
+                "changelog": "Restaurada la pestaña de 'Valoraciones' en el inicio.",
+                "targetAbi": "10.9.0.0",
+                "sourceUrl": "https://github.com/luiscorbachoflores/plugin_reviews/releases/download/v2.1.0.0/Jellyfin.Plugin.UserRatings.zip",
+                "checksum": "d36702b6911dd80b80700798e6da23df",
+                "timestamp": "2026-02-16T00:00:00Z"
+            }
+        ]
+    }
+]
