@@ -105,8 +105,9 @@
     function submitReview(itemId, payload) {
         var headers = { 'Content-Type': 'application/json' };
         var client = apiClient();
-        if (!payload.AsAnonymous && client && typeof client.accessToken === 'function' && client.accessToken()) {
-            headers['X-Emby-Token'] = client.accessToken();
+        var token = client && typeof client.accessToken === 'function' ? client.accessToken() : null;
+        if (token) {
+            headers['X-Emby-Token'] = token;
         }
         return fetch('/Reviews/' + encodeURIComponent(itemId), {
             method: 'POST',
@@ -217,6 +218,11 @@
             }
             if (!comment) {
                 setStatus(container, 'Escribe un comentario.');
+                return;
+            }
+            var client = apiClient();
+            if (!client || !client.accessToken || !client.accessToken()) {
+                setStatus(container, 'Necesitas iniciar sesión en Jellyfin para publicar una reseña (incluso en modo anónimo, nadie más verá tu nombre).');
                 return;
             }
             submitBtn.disabled = true;

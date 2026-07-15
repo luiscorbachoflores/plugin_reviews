@@ -23,5 +23,6 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         });
 
         serviceCollection.AddSingleton<IStartupFilter, ReviewsStartupFilter>();
+        serviceCollection.AddHttpClient();
     }
 }

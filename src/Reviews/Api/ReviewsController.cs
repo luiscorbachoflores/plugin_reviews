@@ -2,12 +2,17 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+using Jellyfin.Data;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Reviews.Db;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Reviews.Api;
 
@@ -18,11 +23,22 @@ public class ReviewsController : ControllerBase
 {
     private readonly ReviewsRepository _repository;
     private readonly IAuthorizationContext _authorizationContext;
+    private readonly ILibraryManager _libraryManager;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<ReviewsController> _logger;
 
-    public ReviewsController(ReviewsRepository repository, IAuthorizationContext authorizationContext)
+    public ReviewsController(
+        ReviewsRepository repository,
+        IAuthorizationContext authorizationContext,
+        ILibraryManager libraryManager,
+        IHttpClientFactory httpClientFactory,
+        ILogger<ReviewsController> logger)
     {
         _repository = repository;
         _authorizationContext = authorizationContext;
+        _libraryManager = libraryManager;
+        _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     [HttpGet("ClientScript")]
@@ -43,11 +59,24 @@ public class ReviewsController : ControllerBase
     }
 
     [HttpGet("{itemId}")]
-    public ActionResult<ReviewsResponseDto> Get([FromRoute] string itemId)
+    public async Task<ActionResult<ReviewsResponseDto>> Get([FromRoute] string itemId)
     {
+        var isAdmin = false;
+        var authInfo = await _authorizationContext.GetAuthorizationInfo(Request).ConfigureAwait(false);
+        if (authInfo.IsAuthenticated && authInfo.User is not null)
+        {
+            isAdmin = authInfo.User.HasPermission(PermissionKind.IsAdministrator);
+        }
+
         var reviews = _repository.GetForItem(itemId);
         var dtoList = reviews
-            .Select(r => new ReviewDto(r.Id, r.IsAnonymous ? "Anónimo" : r.DisplayName, r.IsAnonymous, r.Rating, r.Comment, r.CreatedAt))
+            .Select(r => new ReviewDto(
+                r.Id,
+                r.IsAnonymous && !isAdmin ? "Anónimo" : r.DisplayName,
+                r.IsAnonymous,
+                r.Rating,
+                r.Comment,
+                r.CreatedAt))
             .ToList();
         var average = dtoList.Count > 0 ? Math.Round(dtoList.Average(d => d.Rating), 2) : 0;
         return Ok(new ReviewsResponseDto(average, dtoList.Count, dtoList));
@@ -66,23 +95,59 @@ public class ReviewsController : ControllerBase
             return BadRequest("Comment is required.");
         }
 
-        var displayName = "Anónimo";
-        string? userId = null;
-
-        if (!dto.AsAnonymous)
+        var authInfo = await _authorizationContext.GetAuthorizationInfo(Request).ConfigureAwait(false);
+        if (!authInfo.IsAuthenticated || authInfo.User is null)
         {
-            var authInfo = await _authorizationContext.GetAuthorizationInfo(Request).ConfigureAwait(false);
-            if (!authInfo.IsAuthenticated || authInfo.User is null)
-            {
-                return Unauthorized("A valid Jellyfin session is required to review as a signed-in user.");
-            }
-
-            displayName = authInfo.User.Username;
-            userId = authInfo.UserId.ToString();
+            return Unauthorized("Necesitas iniciar sesión en Jellyfin para publicar una reseña, aunque sea como anónimo.");
         }
 
+        var displayName = authInfo.User.Username;
+        var userId = authInfo.UserId.ToString();
+
         var record = _repository.Add(itemId, userId, displayName, dto.AsAnonymous, dto.Rating, dto.Comment.Trim());
+
+        var itemName = itemId;
+        if (Guid.TryParse(itemId, out var itemGuid))
+        {
+            itemName = _libraryManager.GetItemById(itemGuid)?.Name ?? itemId;
+        }
+
+        await TrySendTelegramAsync(displayName, dto.AsAnonymous, itemName, record.Rating, record.Comment).ConfigureAwait(false);
+
         return Ok(new ReviewDto(record.Id, dto.AsAnonymous ? "Anónimo" : displayName, dto.AsAnonymous, record.Rating, record.Comment, record.CreatedAt));
+    }
+
+    private async Task TrySendTelegramAsync(string realUsername, bool wasAnonymous, string itemName, double rating, string comment)
+    {
+        var config = Plugin.Instance?.Configuration;
+        if (config is null || string.IsNullOrWhiteSpace(config.TelegramBotToken) || string.IsNullOrWhiteSpace(config.TelegramChatId))
+        {
+            return;
+        }
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            var anonNote = wasAnonymous ? " (publicada como anónimo)" : string.Empty;
+            var message = $"⭐ Nueva reseña de {realUsername}{anonNote} en \"{itemName}\": {rating}/5\n{comment}";
+            var url = $"https://api.telegram.org/bot{config.TelegramBotToken}/sendMessage";
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new System.Collections.Generic.KeyValuePair<string, string>("chat_id", config.TelegramChatId),
+                new System.Collections.Generic.KeyValuePair<string, string>("text", message),
+            });
+
+            var response = await client.PostAsync(new Uri(url), content).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                _logger.LogWarning("Reviews: Telegram respondió {StatusCode}: {Body}", response.StatusCode, body);
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "Reviews: no se pudo enviar la notificación por Telegram.");
+        }
     }
 }
 
