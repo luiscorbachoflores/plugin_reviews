@@ -31,9 +31,13 @@ public class IndexHtmlInjectionMiddleware
             return;
         }
 
-        // Force an uncompressed response for this single request so the body
-        // we capture below is plain UTF-8 HTML rather than gzip/br bytes.
+        // Force an uncompressed, non-conditional response for this single request:
+        // - Accept-Encoding removed so the captured body is plain UTF-8 HTML, not gzip/br.
+        // - If-None-Match / If-Modified-Since removed so StaticFileMiddleware never answers
+        //   304 (which must carry an empty body and would throw when we try to write to it).
         context.Request.Headers.Remove("Accept-Encoding");
+        context.Request.Headers.Remove("If-None-Match");
+        context.Request.Headers.Remove("If-Modified-Since");
 
         var originalBody = context.Response.Body;
         using var buffer = new MemoryStream();
@@ -46,6 +50,13 @@ public class IndexHtmlInjectionMiddleware
         finally
         {
             context.Response.Body = originalBody;
+        }
+
+        if (context.Response.StatusCode is StatusCodes.Status304NotModified or StatusCodes.Status204NoContent
+            || HttpMethods.IsHead(context.Request.Method))
+        {
+            // No body allowed on the wire for these; nothing to inject.
+            return;
         }
 
         buffer.Seek(0, SeekOrigin.Begin);

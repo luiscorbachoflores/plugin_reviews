@@ -1,48 +1,46 @@
-# Reviews — Plugin de reseñas para Jellyfin
+# Plugins de Jellyfin — luiscorbachoflores
 
-Plugin para Jellyfin que añade un bloque de reseñas de usuarios a la página de detalle de cada película o serie: valoración por estrellas en pasos de 0,5, comentario de texto y opción de publicar como usuario identificado de Jellyfin o de forma anónima.
+Dos plugins independientes para Jellyfin (.NET 9 / `Jellyfin.Controller` 10.11.x), cada uno inyecta su propio script en `index.html` mediante un middleware ASP.NET Core en tiempo de respuesta — **sin modificar ningún fichero de jellyfin-web**.
 
-## Características
+## Instalación (repositorio de plugins)
 
-- **Valoración por estrellas en medios puntos** (0,5 a 5,0).
-- **Comentario de texto libre** junto a cada valoración.
-- **Modo anónimo o usuario Jellyfin**: un toggle permite elegir si la reseña se publica con el nombre de usuario autenticado o como "Anónimo". Publicar como usuario requiere una sesión Jellyfin válida (se verifica el token en el servidor).
-- **Sin tocar jellyfin-web**: el plugin inyecta su script en `index.html` en tiempo de respuesta (middleware ASP.NET Core), no modifica ningún fichero del cliente web. Sobrevive a actualizaciones del servidor salvo que Jellyfin cambie de forma importante la estructura de la página de detalle.
-- **Almacenamiento propio en SQLite**, dentro de la carpeta de datos del propio plugin.
-- **API REST propia**:
-  - `GET /Reviews/{itemId}` — lista de reseñas y media.
-  - `POST /Reviews/{itemId}` — crear una reseña (`Rating`, `Comment`, `AsAnonymous`).
+En Jellyfin, ve a **Panel de control → Complementos → Repositorios** y añade:
 
-## Instalación
+```
+https://github.com/luiscorbachoflores/plugin_reviews/raw/main/manifest.json
+```
 
-### Vía repositorio de plugins (recomendado)
+Instala **Reviews** y/o **JellyAsk** desde el catálogo de complementos y reinicia Jellyfin.
 
-1. En Jellyfin, ve a **Panel de control → Complementos → Repositorios** y añade:
-   `https://github.com/luiscorbachoflores/plugin_reviews/raw/main/manifest.json`
-2. Instala **Reviews** desde el catálogo de complementos.
-3. Reinicia Jellyfin.
+## Reviews
 
-### Instalación manual
+Añade un bloque de reseñas de usuarios a la página de detalle de cada película o serie: valoración por estrellas en pasos de 0,5, comentario de texto y opción de publicar como usuario identificado de Jellyfin o de forma anónima.
 
-1. Descarga el ZIP de la última release.
-2. Descomprime el contenido directamente en `config/plugins/Reviews_<version>/` de tu instancia de Jellyfin.
-3. Reinicia Jellyfin.
+- API REST propia (`GET/POST /Reviews/{itemId}`), almacenamiento SQLite.
+- El modo "usuario" verifica el token de sesión en el servidor.
+
+Código en [`src/Reviews`](src/Reviews).
+
+## JellyAsk
+
+Añade una entrada **"Pedir película"** al menú de navegación (justo encima de Ajustes). Abre un formulario con un único campo de texto libre ("Incluye todos los detalles posibles para que podamos encontrar la película"); al enviarlo, registra la petición en el **Activity Log nativo de Jellyfin** (Panel de control → Actividad), visible para cualquier plugin de notificaciones (p. ej. un notificador de Telegram) que escuche esos eventos.
+
+- Requiere sesión Jellyfin válida (no admite modo anónimo).
+- API REST propia (`POST /JellyAsk/Request`).
+
+Código en [`src/JellyAsk`](src/JellyAsk).
 
 ## Desarrollo
 
-Código fuente en [`src/`](src/), proyecto .NET 9 / `Jellyfin.Controller` 10.11.x.
+Cada plugin es un proyecto .NET independiente:
 
 ```
-cd src
+cd src/Reviews   # o src/JellyAsk
 dotnet build -c Release -o build
 ```
 
-El resultado en `build/` incluye el DLL del plugin y sus dependencias (`Microsoft.Data.Sqlite` y el runtime nativo de SQLite para `linux-x64`). Para desplegar manualmente, copia a `config/plugins/Reviews_<version>/`:
-
-- `Jellyfin.Plugin.Reviews.dll`, `.deps.json`
-- `Microsoft.Data.Sqlite.dll`, `SQLitePCLRaw.*.dll`
-- `runtimes/linux-x64/native/libe_sqlite3.so`
+El resultado en `build/` incluye el DLL del plugin y sus dependencias. Para desplegar manualmente, copia el contenido a `config/plugins/<Nombre>_<version>/` de tu instancia de Jellyfin.
 
 ## Compatibilidad
 
-Probado contra Jellyfin **10.11.11**. El anclaje visual del widget usa las clases `.itemDetailPage`, `.overview` y `.overview-controls` del cliente web oficial; si una versión futura de Jellyfin cambia esa estructura, solo haría falta actualizar `src/wwwroot/reviews.js`, no el resto del plugin.
+Probado contra Jellyfin **10.11.11**. El anclaje visual usa clases del cliente web oficial (`.itemDetailPage`, `.overview-controls`, `.mainDrawer-scrollContainer`, `.btnSettings`); si una versión futura de Jellyfin cambia esa estructura, solo haría falta actualizar el JS correspondiente (`src/Reviews/wwwroot/reviews.js` o `src/JellyAsk/wwwroot/jellyask.js`), no el resto del plugin.
