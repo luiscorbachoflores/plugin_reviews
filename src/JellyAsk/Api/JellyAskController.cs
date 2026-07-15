@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Jellyfin.Database.Implementations.Entities;
 using MediaBrowser.Controller.Net;
@@ -18,11 +19,19 @@ public class JellyAskController : ControllerBase
 {
     private readonly IActivityManager _activityManager;
     private readonly IAuthorizationContext _authorizationContext;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<JellyAskController> _logger;
 
-    public JellyAskController(IActivityManager activityManager, IAuthorizationContext authorizationContext)
+    public JellyAskController(
+        IActivityManager activityManager,
+        IAuthorizationContext authorizationContext,
+        IHttpClientFactory httpClientFactory,
+        ILogger<JellyAskController> logger)
     {
         _activityManager = activityManager;
         _authorizationContext = authorizationContext;
+        _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     [HttpGet("ClientScript")]
@@ -65,7 +74,42 @@ public class JellyAskController : ControllerBase
         };
 
         await _activityManager.CreateAsync(entry).ConfigureAwait(false);
+
+        await TrySendTelegramAsync(username, dto.Text.Trim()).ConfigureAwait(false);
+
         return Ok();
+    }
+
+    private async Task TrySendTelegramAsync(string username, string text)
+    {
+        var config = Plugin.Instance?.Configuration;
+        if (config is null || string.IsNullOrWhiteSpace(config.TelegramBotToken) || string.IsNullOrWhiteSpace(config.TelegramChatId))
+        {
+            return;
+        }
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            var message = $"🎬 Nueva petición de {username}:\n{text}";
+            var url = $"https://api.telegram.org/bot{config.TelegramBotToken}/sendMessage";
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new System.Collections.Generic.KeyValuePair<string, string>("chat_id", config.TelegramChatId),
+                new System.Collections.Generic.KeyValuePair<string, string>("text", message),
+            });
+
+            var response = await client.PostAsync(new Uri(url), content).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                _logger.LogWarning("JellyAsk: Telegram respondió {StatusCode}: {Body}", response.StatusCode, body);
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "JellyAsk: no se pudo enviar la notificación por Telegram.");
+        }
     }
 }
 

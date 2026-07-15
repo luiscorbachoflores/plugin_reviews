@@ -28,11 +28,19 @@
     {
         "guid": "c3f4a9e2-8d1b-4f6a-9e3c-7a2b5d6e8f10",
         "name": "JellyAsk",
-        "description": "Permite a los usuarios pedir películas o series desde el menú, avisando en el registro de actividad de Jellyfin.",
-        "overview": "Añade una entrada al menú de navegación con un formulario de petición de títulos, registrado en el Activity Log nativo.",
+        "description": "Permite a los usuarios pedir películas o series desde el menú, avisando en el registro de actividad de Jellyfin y, opcionalmente, por Telegram.",
+        "overview": "Añade una entrada al menú de navegación con un formulario de petición de títulos, registrado en el Activity Log nativo, con envío opcional a un bot de Telegram.",
         "owner": "luiscorbachoflores",
         "category": "General",
         "versions": [
+            {
+                "version": "1.1.0.0",
+                "changelog": "Anade pagina de configuracion para un bot de Telegram opcional: si se rellena Bot Token y Chat ID, cada peticion tambien se envia por Telegram ademas de registrarse en el Activity Log.",
+                "targetAbi": "10.11.0.0",
+                "sourceUrl": "https://github.com/luiscorbachoflores/jellyfin_plugins/releases/download/jellyask-v1.1.0.0/Jellyfin.Plugin.JellyAsk.zip",
+                "checksum": "92e372593d7f24f3902d0c10867336ed",
+                "timestamp": "2026-07-15T00:00:00Z"
+            },
             {
                 "version": "1.0.0.0",
                 "changelog": "Primera version: boton en el menu (sobre Ajustes), formulario con peticion en texto libre, registro en el Activity Log de Jellyfin.",

@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="wwwroot\jellyask.js" />
+    <EmbeddedResource Include="Configuration\configPage.html" />
   </ItemGroup>
 
 </Project>
