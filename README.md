@@ -7,7 +7,7 @@ Dos plugins independientes para Jellyfin (.NET 9 / `Jellyfin.Controller` 10.11.x
 En Jellyfin, ve a **Panel de control → Complementos → Repositorios** y añade:
 
 ```
-https://github.com/luiscorbachoflores/plugin_reviews/raw/main/manifest.json
+https://github.com/luiscorbachoflores/jellyfin_plugins/raw/main/manifest.json
 ```
 
 Instala **Reviews** y/o **JellyAsk** desde el catálogo de complementos y reinicia Jellyfin.
