@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.1.1.0",
+                "changelog": "Recompilado contra Jellyfin.Controller 10.11.8 (la 1.1.0.0 exigia ABI 10.11.11 y Jellyfin marcaba el plugin como 'not supported' en instancias mas antiguas). Sin cambios funcionales.",
+                "targetAbi": "10.11.8.0",
+                "sourceUrl": "https://github.com/luiscorbachoflores/jellyfin_plugins/releases/download/reviews-v1.1.1.0/Jellyfin.Plugin.Reviews.zip",
+                "checksum": "f69a2a50a933a3148fe23e23f302ccd0",
+                "timestamp": "2026-07-17T00:00:00Z"
+            },
+            {
                 "version": "1.1.0.0",
                 "changelog": "Publicar una resena (incluso anonima) requiere ahora sesion Jellyfin. En modo anonimo el nombre real solo lo ve un administrador; el resto de usuarios ven 'Anonimo'. Anade aviso opcional por Telegram al publicarse una resena.",
                 "targetAbi": "10.11.0.0",
@@ -41,6 +49,14 @@
         "owner": "luiscorbachoflores",
         "category": "General",
         "versions": [
+            {
+                "version": "1.1.1.0",
+                "changelog": "Recompilado contra Jellyfin.Controller 10.11.8 (la 1.1.0.0 exigia ABI 10.11.11 y Jellyfin marcaba el plugin como 'not supported' en instancias mas antiguas). Sin cambios funcionales.",
+                "targetAbi": "10.11.8.0",
+                "sourceUrl": "https://github.com/luiscorbachoflores/jellyfin_plugins/releases/download/jellyask-v1.1.1.0/Jellyfin.Plugin.JellyAsk.zip",
+                "checksum": "398f5d674ed7941ed0226afe98dc026c",
+                "timestamp": "2026-07-17T00:00:00Z"
+            },
             {
                 "version": "1.1.0.0",
                 "changelog": "Anade pagina de configuracion para un bot de Telegram opcional: si se rellena Bot Token y Chat ID, cada peticion tambien se envia por Telegram ademas de registrarse en el Activity Log.",
