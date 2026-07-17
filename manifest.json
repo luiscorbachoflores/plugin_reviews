@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "1.1.2.0",
+                "changelog": "Corrige que el ensamblado siempre reportaba version 0.0.0.0 en el panel de plugins (Plugin.cs no sobrescribia Version y el .csproj no fijaba AssemblyVersion), lo que podia hacer que Jellyfin considerase el plugin desactualizado de forma permanente. Sin cambios funcionales.",
+                "targetAbi": "10.11.8.0",
+                "sourceUrl": "https://github.com/luiscorbachoflores/jellyfin_plugins/releases/download/reviews-v1.1.2.0/Jellyfin.Plugin.Reviews.zip",
+                "checksum": "ad741a9f2a8e59a9ca63e054c7b1afa3",
+                "timestamp": "2026-07-17T00:00:00Z"
+            },
+            {
                 "version": "1.1.1.0",
                 "changelog": "Recompilado contra Jellyfin.Controller 10.11.8 (la 1.1.0.0 exigia ABI 10.11.11 y Jellyfin marcaba el plugin como 'not supported' en instancias mas antiguas). Sin cambios funcionales.",
                 "targetAbi": "10.11.8.0",
@@ -49,6 +57,14 @@
         "owner": "luiscorbachoflores",
         "category": "General",
         "versions": [
+            {
+                "version": "1.1.2.0",
+                "changelog": "Corrige que el ensamblado siempre reportaba version 0.0.0.0 en el panel de plugins (Plugin.cs no sobrescribia Version y el .csproj no fijaba AssemblyVersion), lo que podia hacer que Jellyfin considerase el plugin desactualizado de forma permanente. Sin cambios funcionales.",
+                "targetAbi": "10.11.8.0",
+                "sourceUrl": "https://github.com/luiscorbachoflores/jellyfin_plugins/releases/download/jellyask-v1.1.2.0/Jellyfin.Plugin.JellyAsk.zip",
+                "checksum": "81a952edb47edddf047ffaabc6bebc92",
+                "timestamp": "2026-07-17T00:00:00Z"
+            },
             {
                 "version": "1.1.1.0",
                 "changelog": "Recompilado contra Jellyfin.Controller 10.11.8 (la 1.1.0.0 exigia ABI 10.11.11 y Jellyfin marcaba el plugin como 'not supported' en instancias mas antiguas). Sin cambios funcionales.",
